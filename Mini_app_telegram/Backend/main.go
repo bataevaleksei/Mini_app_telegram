@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"os"
 	"sort"
 
 	"github.com/gin-gonic/gin"
@@ -65,7 +66,7 @@ func main() {
 	}
 
 	ctx := context.Background()
-	dbURL := ""
+	dbURL := os.Getenv("DATABASE_URL")
 
 	db, err := pgxpool.New(ctx, dbURL)
 	if err != nil {

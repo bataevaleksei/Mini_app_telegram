@@ -2,56 +2,24 @@ package main
 
 import (
 	"context"
-	"embed"
-	"fmt"
-	"io/fs"
 	"log"
 	"net/http"
 	"os"
-	"sort"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
 )
-
-//go:embed migrations/*.sql
-var sqlFiles embed.FS
-
-func initSchema(ctx context.Context, db *pgxpool.Pool) error {
-	entries, err := fs.ReadDir(sqlFiles, "sql")
-	if err != nil {
-		return err
-	}
-
-	names := make([]string, 0, len(entries))
-	for _, e := range entries {
-		if e.IsDir() {
-			continue
-		}
-		names = append(names, e.Name())
-	}
-	sort.Strings(names)
-
-	for _, name := range names {
-		path := "sql/" + name
-
-		queryBytes, err := sqlFiles.ReadFile(path)
-		if err != nil {
-			return fmt.Errorf("read %s: %w", path, err)
-		}
-
-		if _, err := db.Exec(ctx, string(queryBytes)); err != nil {
-			return fmt.Errorf("exec %s: %w", path, err)
-		}
-
-		log.Printf("applied %s", path)
-	}
-
-	return nil
-}
 
 func main() {
 	r := gin.Default()
+
+	_ = godotenv.Load()
+
+	dbURL, ok := os.LookupEnv("DATABASE_URL")
+	if !ok || dbURL == "" {
+		log.Fatal("DATABASE_URL is not set")
+	}
 
 	// Простой healthcheck
 	r.GET("/ping", func(c *gin.Context) {
@@ -60,13 +28,7 @@ func main() {
 		})
 	})
 
-	// Запуск на :8080
-	if err := r.Run(":8080"); err != nil {
-		panic(err)
-	}
-
 	ctx := context.Background()
-	dbURL := os.Getenv("DATABASE_URL")
 
 	db, err := pgxpool.New(ctx, dbURL)
 	if err != nil {
@@ -74,8 +36,13 @@ func main() {
 	}
 	defer db.Close()
 
-	if err := initSchema(ctx, db); err != nil {
+	if err := db.Ping(ctx); err != nil {
 		log.Fatal(err)
+	}
+
+	// Запуск на :8080
+	if err := r.Run(":8080"); err != nil {
+		panic(err)
 	}
 
 }

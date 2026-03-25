@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS cart_items(
   id BIGSERIAL PRIMARY KEY,
   product_id BIGINT NOT NULL,
-  quantity INT NOT NULL,
+  quantity INT NOT NULL
 )

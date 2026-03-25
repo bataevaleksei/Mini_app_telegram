@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS order (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL,
+  items_id BIGINT NOT NULL,
+  price INT NOT NULL,
+  status VARCHAR(50) NOT NULL,
+)

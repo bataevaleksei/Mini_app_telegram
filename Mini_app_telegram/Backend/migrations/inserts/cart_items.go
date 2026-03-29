@@ -1,10 +1,28 @@
 package inserts
 
 import (
+	"context"
 	"database/sql"
 )
 
-func insertCartItem(db *sql.DB, cartID int, productID int, quantityID int) error {
-	_, err := db.Exec(`INSERT INTO cart_items (cart_id, product_id, quantity_id) VALUES ($1, $2, $3)`, cartID, productID, quantityID)
+func InsertCartItem(ctx context.Context, db *sql.DB, userID, productID, quantity int64) error {
+	var cartID int64
+
+	err := db.QueryRowContext(ctx, `
+		SELECT cart_id
+		FROM carts
+		WHERE user_id = $1
+	`, userID).Scan(&cartID)
+	if err != nil {
+		return err
+	}
+
+	_, err = db.ExecContext(ctx, `
+		INSERT INTO cart_items (cart_id, product_id, quantity)
+		VALUES ($1, $2, $3)
+		ON CONFLICT (cart_id, product_id)
+		DO UPDATE SET quantity = cart_items.quantity + EXCLUDED.quantity
+	`, cartID, productID, quantity)
+
 	return err
 }

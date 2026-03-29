@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS products(
-  id BIGSERIAL PRIMARY KEY,
+  product_id BIGSERIAL PRIMARY KEY,
   title TEXT NOT NULL,
   description TEXT NOT NULL,
-  price NUMERIC(10, 2) NOT NULL
+  price NUMERIC(10, 2) NOT NULL CHECK (price >= 0),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 )
